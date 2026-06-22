@@ -2,19 +2,20 @@ name: Test schedule
 
 on:
   schedule:
+    # TEST: prova a partire ogni 5 minuti
     - cron: "*/5 * * * *"
 
   workflow_dispatch:
 
 jobs:
-  test:
+  test-schedule:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Print time
+      - name: Print schedule test
         run: |
-          echo "Schedule test started"
-          echo "UTC time:"
+          echo "Test schedule partito correttamente."
+          echo "Ora UTC:"
           date -u
-          echo "Runner time:"
+          echo "Ora runner:"
           date
