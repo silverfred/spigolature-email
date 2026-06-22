@@ -1,10 +1,15 @@
 name: Daily random chapter email
 
 on:
-  schedule:
-    # 17:45 UTC = 19:45 in Italia con ora legale
-    - cron: "45 17 * * *"
+  # Parte anche quando fai Commit changes.
+  # Serve per verificare subito che il workflow venga riconosciuto.
+  push:
 
+  # TEST TEMPORANEO: prova a partire ogni 5 minuti.
+  schedule:
+    - cron: "*/5 * * * *"
+
+  # Pulsante manuale Run workflow.
   workflow_dispatch:
 
 permissions:
@@ -23,6 +28,13 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Show current time
+        run: |
+          echo "UTC time:"
+          date -u
+          echo "Local runner time:"
+          date
+
       - name: Install dependencies
         run: pip install -r requirements.txt
 
@@ -36,11 +48,11 @@ jobs:
           HISTORY_PATH: "cronologia.txt"
           EXPECTED_CHAPTER_COUNT: "166"
 
-          # Lo metto su false per il test:
-          # così, anche se GitHub ritarda di qualche minuto, la mail parte comunque.
+          # Per il test deve essere false:
+          # così manda la mail a qualunque ora.
           ENFORCE_LOCAL_HOURS: "false"
           LOCAL_TZ: "Europe/Rome"
-          ALLOWED_LOCAL_HOURS: "19"
+          ALLOWED_LOCAL_HOURS: "6,19"
         run: python send_random_chapter.py
 
       - name: Commit updated history
