@@ -2,7 +2,7 @@ name: Daily random chapter email
 
 on:
   schedule:
-    - cron: "0/5 * * * *"
+    - cron: "*/5 * * * *"
   push:
     branches:
       - main
