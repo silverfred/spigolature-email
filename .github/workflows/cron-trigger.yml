@@ -2,13 +2,10 @@ name: Email schedule trigger
 
 on:
   schedule:
-    # Mattina 05:00-06:00 ora italiana
-    # Copre sia ora solare sia ora legale, perché GitHub usa UTC
-    - cron: "0,5,10,15,20,25,30,35,40,45,50,55 3,4 * * *"
-
-    # Sera 18:00-19:00 ora italiana
-    # Copre sia ora solare sia ora legale, perché GitHub usa UTC
-    - cron: "0,5,10,15,20,25,30,35,40,45,50,55 16,17 * * *"
+    # GitHub usa UTC.
+    # Questi tentativi coprono sia ora solare sia ora legale italiana.
+    # Lo script Python poi invia solo se in Italia sono le 05 o le 18.
+    - cron: "5,35 3,4,16,17 * * *"
 
   workflow_dispatch:
 
@@ -20,11 +17,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Trigger email workflow
+      - name: Trigger Random chapter email workflow
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh api \
             --method POST \
-            repos/${{ github.repository }}/dispatches \
-            -f event_type=send-email
+            "repos/${{ github.repository }}/dispatches" \
+            -f event_type=scheduled-email
