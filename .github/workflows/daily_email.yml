@@ -2,7 +2,10 @@ name: Daily random chapter email
 
 on:
   schedule:
-    - cron: "0 4,5,17,18 * * *"
+    # GitHub Actions usa UTC.
+    # Questi orari fanno partire lo script alle 06:20 e alle 19:20 italiane,
+    # sia con ora solare sia con ora legale.
+    - cron: "20 4,5,17,18 * * *"
 
   workflow_dispatch:
 
