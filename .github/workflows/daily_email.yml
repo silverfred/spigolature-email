@@ -1,15 +1,10 @@
 name: Daily random chapter email
 
 on:
-  # Parte anche quando fai Commit changes.
-  # Serve per verificare subito che il workflow venga riconosciuto.
-  push:
-
-  # TEST TEMPORANEO: prova a partire ogni 5 minuti.
   schedule:
+    # TEST TEMPORANEO: prova a partire ogni 5 minuti
     - cron: "*/5 * * * *"
 
-  # Pulsante manuale Run workflow.
   workflow_dispatch:
 
 permissions:
@@ -32,7 +27,7 @@ jobs:
         run: |
           echo "UTC time:"
           date -u
-          echo "Local runner time:"
+          echo "Runner time:"
           date
 
       - name: Install dependencies
@@ -48,8 +43,8 @@ jobs:
           HISTORY_PATH: "cronologia.txt"
           EXPECTED_CHAPTER_COUNT: "166"
 
-          # Per il test deve essere false:
-          # così manda la mail a qualunque ora.
+          # Per il test lo lasciamo false:
+          # così, quando lo schedule parte, manda davvero la mail.
           ENFORCE_LOCAL_HOURS: "false"
           LOCAL_TZ: "Europe/Rome"
           ALLOWED_LOCAL_HOURS: "6,19"
