@@ -2,10 +2,8 @@ name: Daily random chapter email
 
 on:
   schedule:
-    # GitHub Actions usa UTC.
-    # Questi orari fanno partire lo script alle 06:20 e alle 19:20 italiane,
-    # sia con ora solare sia con ora legale.
-    - cron: "20 4,5,17,18 * * *"
+    # 17:45 UTC = 19:45 in Italia con ora legale
+    - cron: "45 17 * * *"
 
   workflow_dispatch:
 
@@ -38,9 +36,11 @@ jobs:
           HISTORY_PATH: "cronologia.txt"
           EXPECTED_CHAPTER_COUNT: "166"
 
-          ENFORCE_LOCAL_HOURS: "true"
+          # Lo metto su false per il test:
+          # così, anche se GitHub ritarda di qualche minuto, la mail parte comunque.
+          ENFORCE_LOCAL_HOURS: "false"
           LOCAL_TZ: "Europe/Rome"
-          ALLOWED_LOCAL_HOURS: "6,19"
+          ALLOWED_LOCAL_HOURS: "19"
         run: python send_random_chapter.py
 
       - name: Commit updated history
