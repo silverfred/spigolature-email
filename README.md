@@ -1,1 +1,3 @@
 Spigolature
+
+Trigger scheduler activation
