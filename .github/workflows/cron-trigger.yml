@@ -1,18 +1,31 @@
-name: Cron Schedule Trigger
+name: Email schedule trigger
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    # GitHub Actions usa sempre UTC.
+    # Questi orari coprono sia ora solare sia ora legale italiana:
+    # - 03:05/03:35 UTC -> 05:05/05:35 in Italia quando c'è l'ora legale
+    # - 04:05/04:35 UTC -> 05:05/05:35 in Italia quando c'è l'ora solare
+    # - 16:05/16:35 UTC -> 18:05/18:35 in Italia quando c'è l'ora legale
+    # - 17:05/17:35 UTC -> 18:05/18:35 in Italia quando c'è l'ora solare
+    # Lo script Python filtra l'ora locale Europe/Rome e impedisce doppioni.
+    - cron: "5,35 3,4,16,17 * * *"
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   trigger-email:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Trigger daily email workflow
+      - name: Trigger email workflow
         uses: actions/github-script@v7
         with:
           script: |
-            github.rest.repos.createDispatchEvent({
+            await github.rest.repos.createDispatchEvent({
               owner: context.repo.owner,
               repo: context.repo.repo,
               event_type: 'scheduled-email'
