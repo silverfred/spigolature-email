@@ -1,0 +1,56 @@
+name: Daily random chapter email
+
+on:
+  schedule:
+    # GitHub Actions usa UTC.
+    # Questi orari coprono 6:00 e 19:00 italiane sia con ora solare sia con ora legale.
+    - cron: "0 4,5,17,18 * * *"
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  send-email:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Send random chapter
+        env:
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+          APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
+          RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
+
+          DOCX_PATH: "spigolature.docx"
+          HISTORY_PATH: "cronologia.txt"
+          EXPECTED_CHAPTER_COUNT: "166"
+
+          ENFORCE_LOCAL_HOURS: "true"
+          LOCAL_TZ: "Europe/Rome"
+          ALLOWED_LOCAL_HOURS: "6,19"
+        run: python send_random_chapter.py
+
+      - name: Commit updated history
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          if [ -f cronologia.txt ]; then
+            git add cronologia.txt
+            git diff --cached --quiet || git commit -m "Update sent chapter history"
+            git push
+          else
+            echo "Nessun file cronologia.txt da salvare."
+          fi
