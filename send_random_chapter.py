@@ -17,14 +17,12 @@ ROMAN_RE = re.compile(
 )
 
 
-# Nome del file DOCX
+# Nome del file DOCX.
+# Ti consiglio di rinominare il file caricato in: spigolature.docx
 DOCX_PATH = Path(os.getenv("DOCX_PATH", "spigolature.docx"))
 
 # File in cui vengono salvati i capitoli già inviati
 HISTORY_PATH = Path(os.getenv("HISTORY_PATH", "cronologia.txt"))
-
-# File in cui vengono salvate le fasce giornaliere già usate per l'invio
-SEND_LOG_PATH = Path(os.getenv("SEND_LOG_PATH", "invii_email.txt"))
 
 # Numero atteso di capitoli nel documento
 EXPECTED_CHAPTER_COUNT = int(os.getenv("EXPECTED_CHAPTER_COUNT", "166"))
@@ -34,90 +32,35 @@ SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 465
 
 
-PERIOD_LABELS = {
-    5: "mattina",
-    18: "sera",
-}
-
-
-def get_allowed_hours() -> set[int]:
+def should_run_now() -> bool:
     """
-    Legge le ore locali abilitate per l'invio.
-    Esempio: ALLOWED_LOCAL_HOURS="5,18".
-    """
-    allowed_hours_raw = os.getenv("ALLOWED_LOCAL_HOURS", "5,18")
+    Su GitHub Actions:
+    - se il workflow viene lanciato manualmente, invia sempre;
+    - se parte da cron, invia solo alle ore locali previste.
 
-    return {
+    Questo serve perché GitHub Actions usa UTC,
+    mentre noi vogliamo inviare alle 6:00 e alle 19:00 ora italiana.
+    """
+    if os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch":
+        return True
+
+    enforce = os.getenv("ENFORCE_LOCAL_HOURS", "false").lower() == "true"
+
+    if not enforce:
+        return True
+
+    timezone = os.getenv("LOCAL_TZ", "Europe/Rome")
+    allowed_hours_raw = os.getenv("ALLOWED_LOCAL_HOURS", "6,19")
+
+    allowed_hours = {
         int(hour.strip())
         for hour in allowed_hours_raw.split(",")
         if hour.strip()
     }
 
-
-def get_send_window_key() -> str | None:
-    """
-    Restituisce la chiave della finestra di invio corrente.
-
-    - Per gli invii schedulati, invia solo nelle ore locali abilitate.
-    - Per i test manuali, può inviare sempre se MANUAL_SEND_IGNORES_WINDOWS=true.
-    - La chiave serve per evitare più invii nella stessa fascia dello stesso giorno.
-    """
-    timezone = os.getenv("LOCAL_TZ", "Europe/Rome")
     now = datetime.now(ZoneInfo(timezone))
 
-    event_name = os.getenv("GITHUB_EVENT_NAME", "")
-    manual_ignores_windows = (
-        os.getenv("MANUAL_SEND_IGNORES_WINDOWS", "true").lower() == "true"
-    )
-
-    if event_name == "workflow_dispatch" and manual_ignores_windows:
-        print("Esecuzione manuale: invio consentito anche fuori fascia oraria.")
-        return None
-
-    enforce = os.getenv("ENFORCE_LOCAL_HOURS", "true").lower() == "true"
-
-    if not enforce:
-        return None
-
-    allowed_hours = get_allowed_hours()
-
-    if now.hour not in allowed_hours:
-        print(
-            "Ora locale non prevista per l'invio: "
-            f"{now.strftime('%Y-%m-%d %H:%M:%S %Z')}"
-        )
-        return "SKIP"
-
-    period_label = PERIOD_LABELS.get(now.hour, f"ore-{now.hour:02d}")
-
-    return f"{now.date()}:{period_label}"
-
-
-def load_send_log(send_log_path: Path) -> set[str]:
-    """
-    Legge le fasce di invio già usate, per evitare doppioni.
-    """
-    if not send_log_path.exists():
-        return set()
-
-    sent_windows = set()
-
-    with send_log_path.open("r", encoding="utf-8") as file:
-        for line in file:
-            value = line.strip()
-
-            if value:
-                sent_windows.add(value)
-
-    return sent_windows
-
-
-def append_to_send_log(send_log_path: Path, send_window_key: str) -> None:
-    """
-    Salva la fascia giornaliera usata per l'invio.
-    """
-    with send_log_path.open("a", encoding="utf-8") as file:
-        file.write(send_window_key.strip() + "\n")
+    return now.hour in allowed_hours
 
 
 def clean_cell_text(cell) -> str:
@@ -301,23 +244,14 @@ def main() -> None:
     """
     Funzione principale:
     - controlla se deve inviare ora;
-    - evita doppioni nella stessa fascia giornaliera;
     - carica i capitoli dal DOCX;
     - sceglie un capitolo non ancora inviato;
     - manda l'email;
-    - aggiorna cronologia capitoli e cronologia invii.
+    - aggiorna cronologia.txt.
     """
-    send_window_key = get_send_window_key()
-
-    if send_window_key == "SKIP":
+    if not should_run_now():
+        print("Ora locale non prevista per l'invio. Esco senza inviare.")
         return
-
-    if send_window_key:
-        sent_windows = load_send_log(SEND_LOG_PATH)
-
-        if send_window_key in sent_windows:
-            print(f"Email già inviata per la fascia {send_window_key}. Esco.")
-            return
 
     chapters = load_chapters(DOCX_PATH)
 
@@ -338,9 +272,6 @@ def main() -> None:
     send_email(subject, body)
 
     append_to_history(HISTORY_PATH, roman_number)
-
-    if send_window_key:
-        append_to_send_log(SEND_LOG_PATH, send_window_key)
 
     print(f"Inviato capitolo {roman_number}.")
 
