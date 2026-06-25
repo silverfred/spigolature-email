@@ -1,16 +1,15 @@
-name: Random chapter email
+name: Daily random chapter email
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
   repository_dispatch:
     types: [scheduled-email]
 
 permissions:
   contents: write
-
-concurrency:
-  group: spigolature-email
-  cancel-in-progress: false
 
 jobs:
   send-email:
@@ -43,29 +42,24 @@ jobs:
 
           DOCX_PATH: "spigolature.docx"
           HISTORY_PATH: "cronologia.txt"
-          SEND_LOG_PATH: "invii_email.txt"
           EXPECTED_CHAPTER_COUNT: "166"
 
-          ENFORCE_LOCAL_HOURS: "true"
+          # Per il test lo lasciamo false:
+          # così, quando lo schedule parte, manda davvero la mail.
+          ENFORCE_LOCAL_HOURS: "false"
           LOCAL_TZ: "Europe/Rome"
-          ALLOWED_LOCAL_HOURS: "5,18"
-          MANUAL_SEND_IGNORES_WINDOWS: "true"
+          ALLOWED_LOCAL_HOURS: "6,19"
         run: python send_random_chapter.py
 
-      - name: Commit updated logs
+      - name: Commit updated history
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-          git add cronologia.txt
-
-          if [ -f invii_email.txt ]; then
-            git add invii_email.txt
-          fi
-
-          if git diff --cached --quiet; then
-            echo "Nessuna cronologia da aggiornare."
-          else
-            git commit -m "Update email history"
+          if [ -f cronologia.txt ]; then
+            git add cronologia.txt
+            git diff --cached --quiet || git commit -m "Update sent chapter history"
             git push
+          else
+            echo "Nessun file cronologia.txt da salvare."
           fi
