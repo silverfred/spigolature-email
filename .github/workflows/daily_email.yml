@@ -1,9 +1,6 @@
 name: Daily random chapter email
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
   repository_dispatch:
     types: [scheduled-email]
@@ -46,9 +43,9 @@ jobs:
 
           # Per il test lo lasciamo false:
           # così, quando lo schedule parte, manda davvero la mail.
-          ENFORCE_LOCAL_HOURS: "false"
+          ENFORCE_LOCAL_HOURS: "true"
           LOCAL_TZ: "Europe/Rome"
-          ALLOWED_LOCAL_HOURS: "6,19"
+          ALLOWED_LOCAL_HOURS: "5,18"
         run: python send_random_chapter.py
 
       - name: Commit updated history
