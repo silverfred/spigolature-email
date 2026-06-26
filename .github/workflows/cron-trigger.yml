@@ -2,7 +2,10 @@ name: Cron Schedule Trigger
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "30 5 * * *"
+      timezone: "Europe/Rome"
+    - cron: "30 18 * * *"
+      timezone: "Europe/Rome"
   workflow_dispatch:
 
 permissions:
