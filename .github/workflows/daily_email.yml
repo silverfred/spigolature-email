@@ -43,7 +43,7 @@ jobs:
 
           # Per il test lo lasciamo false:
           # così, quando lo schedule parte, manda davvero la mail.
-          ENFORCE_LOCAL_HOURS: "true"
+          ENFORCE_LOCAL_HOURS: "false"
           LOCAL_TZ: "Europe/Rome"
           ALLOWED_LOCAL_HOURS: "5,18"
         run: python send_random_chapter.py
