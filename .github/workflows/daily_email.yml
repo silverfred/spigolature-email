@@ -36,7 +36,6 @@ jobs:
           SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
           APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
           RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
-          WORKFLOW_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
 
           DOCX_PATH: "spigolature.docx"
           HISTORY_PATH: "cronologia.txt"
