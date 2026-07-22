@@ -112,7 +112,7 @@ def load_chapters(docx_path: Path) -> list[dict]:
 
     for i, (chapter_num, start_index) in enumerate(chapter_starts):
         if i + 1 < len(chapter_starts):
-            end_index = chapter_starts[i + 1][0]
+            end_index = chapter_starts[i + 1][1]  # FIX: Prendi l'indice [1], non il numero [0]
         else:
             end_index = len(paragraphs)
 
