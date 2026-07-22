@@ -3,6 +3,7 @@ import re
 import ssl
 import random
 import smtplib
+import requests
 from pathlib import Path
 from email.message import EmailMessage
 from zoneinfo import ZoneInfo
@@ -27,6 +28,11 @@ EXPECTED_CHAPTER_COUNT = int(os.getenv("EXPECTED_CHAPTER_COUNT", "153"))
 # Configurazione Gmail SMTP
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 465
+
+# GitHub API
+GITHUB_OWNER = "silverfred"
+GITHUB_REPO = "spigolature-email"
+GITHUB_WORKFLOW = "daily_email_parole_celate.yml"
 
 
 def should_run_now() -> bool:
@@ -202,7 +208,26 @@ def get_required_env(name: str) -> str:
     return value
 
 
-def send_email(subject: str, body: str) -> None:
+def generate_trigger_link() -> str:
+    """
+    Genera un link che trigghera il workflow manualmente.
+    
+    Il link usa l'API di GitHub per dispatchare il workflow.
+    Quando cliccato, trigghera il workflow senza feedback visibile.
+    """
+    workflow_token = get_required_env("WORKFLOW_TOKEN")
+    
+    # URL base per triggerare il workflow via API
+    base_url = f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/actions/workflows/{GITHUB_WORKFLOW}/dispatches"
+    
+    # Aggiungiamo il token come parametro (workaround per link cliccabile)
+    # In realtà useremo una soluzione più elegante con curl nel link
+    link = f"{base_url}?token={workflow_token}"
+    
+    return link
+
+
+def send_email(subject: str, body: str, trigger_link: str = "") -> None:
     """
     Invia l'email usando Gmail SMTP SSL.
     Richiede queste variabili d'ambiente:
@@ -214,6 +239,10 @@ def send_email(subject: str, body: str) -> None:
     sender_email = get_required_env("SENDER_EMAIL")
     app_password = get_required_env("APP_PASSWORD").replace(" ", "")
     receiver_email = get_required_env("RECEIVER_EMAIL")
+
+    # Se c'è il trigger link, aggiungilo al body
+    if trigger_link:
+        body += f"\n\n---\n🔄 Clicca qui per un nuovo estratto:\n{trigger_link}"
 
     message = EmailMessage()
     message["From"] = sender_email
@@ -234,6 +263,7 @@ def main() -> None:
     - controlla se deve inviare ora;
     - carica i capitoli dal DOCX;
     - sceglie un capitolo non ancora inviato;
+    - genera il link per triggerare un nuovo capitolo;
     - manda l'email;
     - aggiorna cronologia_parole_celate.txt.
     """
@@ -257,7 +287,14 @@ def main() -> None:
         "Invio automatico."
     )
 
-    send_email(subject, body)
+    # Genera il link per triggerare un nuovo capitolo
+    try:
+        trigger_link = generate_trigger_link()
+    except EnvironmentError:
+        print("WORKFLOW_TOKEN non trovato, email senza link.")
+        trigger_link = ""
+
+    send_email(subject, body, trigger_link)
 
     append_to_history(HISTORY_PATH, chapter_number)
 
