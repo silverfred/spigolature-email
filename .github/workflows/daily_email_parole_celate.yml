@@ -41,6 +41,7 @@ jobs:
           SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
           APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
           RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
+          WORKFLOW_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
 
           # Configurazione specifica per Parole Celate
           DOCX_PATH: "parole_celate.docx"
