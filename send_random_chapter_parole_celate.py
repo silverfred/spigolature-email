@@ -3,7 +3,6 @@ import re
 import ssl
 import random
 import smtplib
-import requests
 from pathlib import Path
 from email.message import EmailMessage
 from zoneinfo import ZoneInfo
@@ -221,7 +220,6 @@ def generate_trigger_link() -> str:
     base_url = f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/actions/workflows/{GITHUB_WORKFLOW}/dispatches"
     
     # Aggiungiamo il token come parametro (workaround per link cliccabile)
-    # In realtà useremo una soluzione più elegante con curl nel link
     link = f"{base_url}?token={workflow_token}"
     
     return link
