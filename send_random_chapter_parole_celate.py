@@ -32,6 +32,7 @@ SMTP_PORT = 465
 GITHUB_OWNER = "silverfred"
 GITHUB_REPO = "spigolature-email"
 GITHUB_WORKFLOW = "daily_email_parole_celate.yml"
+GITHUB_PAGES_URL = "https://silverfred.github.io/spigolature-email"
 
 
 def should_run_now() -> bool:
@@ -209,18 +210,20 @@ def get_required_env(name: str) -> str:
 
 def generate_trigger_link() -> str:
     """
-    Genera un link che trigghera il workflow manualmente.
+    Genera un link che trigghera il workflow manualmente tramite GitHub Pages.
     
-    Il link usa l'API di GitHub per dispatchare il workflow.
-    Quando cliccato, trigghera il workflow senza feedback visibile.
+    Il link punta a trigger-workflow.html che fa il POST all'API con il token nel header.
     """
     workflow_token = get_required_env("WORKFLOW_TOKEN")
     
-    # URL base per triggerare il workflow via API
-    base_url = f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/actions/workflows/{GITHUB_WORKFLOW}/dispatches"
-    
-    # Aggiungiamo il token come parametro (workaround per link cliccabile)
-    link = f"{base_url}?token={workflow_token}"
+    # URL della pagina HTML su GitHub Pages che trigghera il workflow
+    link = (
+        f"{GITHUB_PAGES_URL}/trigger-workflow.html"
+        f"?token={workflow_token}"
+        f"&owner={GITHUB_OWNER}"
+        f"&repo={GITHUB_REPO}"
+        f"&workflow={GITHUB_WORKFLOW}"
+    )
     
     return link
 
