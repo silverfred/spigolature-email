@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trigger Workflow</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 500px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            display: none;
+        }
+        .status.loading {
+            background: #e3f2fd;
+            color: #1976d2;
+            display: block;
+        }
+        .status.success {
+            background: #e8f5e9;
+            color: #388e3c;
+            display: block;
+        }
+        .status.error {
+            background: #ffebee;
+            color: #d32f2f;
+            display: block;
+        }
+        .emoji {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="emoji">🔄</div>
+        <h1>Trigger Workflow</h1>
+        <p>Stai per inviare un nuovo capitolo...</p>
+        <div id="status" class="status loading">
+            ⏳ Elaborazione in corso...
+        </div>
+    </div>
+
+    <script>
+        // Leggi i parametri dall'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const owner = urlParams.get('owner') || 'silverfred';
+        const repo = urlParams.get('repo') || 'spigolature-email';
+        const workflow = urlParams.get('workflow') || 'daily_email_parole_celate.yml';
+
+        const statusDiv = document.getElementById('status');
+
+        if (!token) {
+            statusDiv.className = 'status error';
+            statusDiv.innerHTML = '❌ Token mancante!';
+        } else {
+            // Fai il POST all'API di GitHub
+            fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflow}/dispatches`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ref: 'main'
+                })
+            })
+            .then(response => {
+                if (response.status === 204) {
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = '✅ Workflow avviato!<br>Tra poco riceverai una nuova email con un nuovo capitolo.';
+                } else if (response.status === 401) {
+                    throw new Error('Token non valido');
+                } else if (response.status === 404) {
+                    throw new Error('Workflow non trovato');
+                } else {
+                    throw new Error(`Errore ${response.status}`);
+                }
+            })
+            .catch(error => {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `❌ Errore: ${error.message}`;
+            });
+        }
+    </script>
+</body>
+</html>
