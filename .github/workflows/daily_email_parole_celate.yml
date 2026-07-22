@@ -1,9 +1,12 @@
-name: Daily random chapter email
+name: Daily Parole Celate email
 
 on:
   workflow_dispatch:
-  repository_dispatch:
-    types: [scheduled-email]
+  schedule:
+    # Cron: 05:00 UTC = 06:00 CET/CEST (mattina)
+    - cron: '0 5 * * *'
+    # Cron: 17:00 UTC = 18:00 CET/CEST (sera)  
+    - cron: '0 17 * * *'
 
 permissions:
   contents: write
@@ -15,6 +18,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+        with:
+          ref: Parole-celate
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -31,32 +36,32 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Send random chapter
+      - name: Send random chapter from Parole Celate
         env:
           SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
           APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
           RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
 
-          DOCX_PATH: "spigolature.docx"
-          HISTORY_PATH: "cronologia.txt"
-          EXPECTED_CHAPTER_COUNT: "166"
+          # Configurazione specifica per Parole Celate
+          DOCX_PATH: "parole_celate.docx"
+          HISTORY_PATH: "cronologia_parole_celate.txt"
+          EXPECTED_CHAPTER_COUNT: "153"
 
-          # Per il test lo lasciamo false:
-          # così, quando lo schedule parte, manda davvero la mail.
-          ENFORCE_LOCAL_HOURS: "false"
+          # Verifica ore locali (mattina alle 6:00 e sera alle 18:00 ora italiana)
+          ENFORCE_LOCAL_HOURS: "true"
           LOCAL_TZ: "Europe/Rome"
-          ALLOWED_LOCAL_HOURS: "5,18"
-        run: python send_random_chapter.py
+          ALLOWED_LOCAL_HOURS: "6,18"
+        run: python send_random_chapter_parole_celate.py
 
       - name: Commit updated history
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-          if [ -f cronologia.txt ]; then
-            git add cronologia.txt
-            git diff --cached --quiet || git commit -m "Update sent chapter history"
+          if [ -f cronologia_parole_celate.txt ]; then
+            git add cronologia_parole_celate.txt
+            git diff --cached --quiet || git commit -m "Update Parole Celate sent chapter history"
             git push
           else
-            echo "Nessun file cronologia.txt da salvare."
+            echo "Nessun file cronologia_parole_celate.txt da salvare."
           fi
