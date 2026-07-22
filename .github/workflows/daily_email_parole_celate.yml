@@ -1,0 +1,67 @@
+name: Daily Parole Celate email
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Cron: 05:00 UTC = 06:00 CET/CEST (mattina)
+    - cron: '0 5 * * *'
+    # Cron: 17:00 UTC = 18:00 CET/CEST (sera)  
+    - cron: '0 17 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  send-email:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          ref: Parole-celate
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Show current time
+        run: |
+          echo "UTC time:"
+          date -u
+          echo "Runner time:"
+          date
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Send random chapter from Parole Celate
+        env:
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+          APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
+          RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
+
+          # Configurazione specifica per Parole Celate
+          DOCX_PATH: "parole_celate.docx"
+          HISTORY_PATH: "cronologia_parole_celate.txt"
+          EXPECTED_CHAPTER_COUNT: "153"
+
+          # Verifica ore locali (mattina alle 6:00 e sera alle 18:00 ora italiana)
+          ENFORCE_LOCAL_HOURS: "true"
+          LOCAL_TZ: "Europe/Rome"
+          ALLOWED_LOCAL_HOURS: "6,18"
+        run: python send_random_chapter_parole_celate.py
+
+      - name: Commit updated history
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          if [ -f cronologia_parole_celate.txt ]; then
+            git add cronologia_parole_celate.txt
+            git diff --cached --quiet || git commit -m "Update Parole Celate sent chapter history"
+            git push
+          else
+            echo "Nessun file cronologia_parole_celate.txt da salvare."
+          fi
