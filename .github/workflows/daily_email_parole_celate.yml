@@ -5,11 +5,15 @@ on:
   schedule:
     # Cron: 05:00 UTC = 06:00 CET/CEST (mattina)
     - cron: '0 5 * * *'
-    # Cron: 17:00 UTC = 18:00 CET/CEST (sera)  
+    # Cron: 17:00 UTC = 18:00 CET/CEST (sera)
     - cron: '0 17 * * *'
 
 permissions:
   contents: write
+
+concurrency:
+  group: parole-celate-history
+  cancel-in-progress: false
 
 jobs:
   send-email:
@@ -20,6 +24,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           ref: Parole-celate
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -62,7 +67,10 @@ jobs:
           if [ -f cronologia_parole_celate.txt ]; then
             git add cronologia_parole_celate.txt
             git diff --cached --quiet || git commit -m "Update Parole Celate sent chapter history"
-            git push
+
+            git fetch origin Parole-celate
+            git pull --rebase origin Parole-celate
+            git push origin HEAD:Parole-celate
           else
             echo "Nessun file cronologia_parole_celate.txt da salvare."
           fi
